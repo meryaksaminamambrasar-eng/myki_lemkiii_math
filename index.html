@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyKi Math CAP</title>
+    <!-- Tailwind CSS for high quality layout styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter & Fredoka One -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Fredoka+One&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; /* Light crocodile green tint */
+        }
+        .title-font {
+            font-family: 'Fredoka One', cursive;
+        }
+        /* Custom animations for the math ball and floaters */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(3deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(34, 197, 94, 0.6)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(34, 197, 94, 0.9)); }
+        }
+        .animate-glow {
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes drip {
+            0% { transform: translateY(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(30px); opacity: 0; }
+        }
+        .animate-tear {
+            animation: drip 1.5s infinite linear;
+        }
+
+        /* Bounce animations */
+        @keyframes jump {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-jump {
+            animation: jump 1.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 overflow-x-hidden">
+
+<div id="root" class="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border-4 border-green-400 overflow-hidden relative">
+    <!-- Game App will render here via React -->
+</div>
+
+<!-- React Development Libraries (Single File Implementation) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Exact 20 questions for each category provided by the user
+    const GAME_QUESTIONS = {
+        perkalian: [
+            { id: 1, text: "7 × 8", answer: 56, num1: 7, num2: 8, op: "×" },
+            { id: 2, text: "12 × 6", answer: 72, num1: 12, num2: 6, op: "×" },
+            { id: 3, text: "9 × 9", answer: 81, num1: 9, num2: 9, op: "×" },
+            { id: 4, text: "15 × 4", answer: 60, num1: 15, num2: 4, op: "×" },
+            { id: 5, text: "13 × 7", answer: 91, num1: 13, num2: 7, op: "×" },
+            { id: 6, text: "25 × 3", answer: 75, num1: 25, num2: 3, op: "×" },
+            { id: 7, text: "18 × 5", answer: 90, num1: 18, num2: 5, op: "×" },
+            { id: 8, text: "14 × 12", answer: 168, num1: 14, num2: 12, op: "×" },
+            { id: 9, text: "11 × 11", answer: 121, num1: 11, num2: 11, op: "×" },
+            { id: 10, text: "16 × 8", answer: 128, num1: 16, num2: 8, op: "×" },
+            { id: 11, text: "21 × 4", answer: 84, num1: 21, num2: 4, op: "×" },
+            { id: 12, text: "17 × 9", answer: 153, num1: 17, num2: 9, op: "×" },
+            { id: 13, text: "19 × 6", answer: 114, num1: 19, num2: 6, op: "×" },
+            { id: 14, text: "24 × 5", answer: 120, num1: 24, num2: 5, op: "×" },
+            { id: 15, text: "32 × 2", answer: 64, num1: 32, num2: 2, op: "×" },
+            { id: 16, text: "27 × 3", answer: 81, num1: 27, num2: 3, op: "×" },
+            { id: 17, text: "35 × 4", answer: 140, num1: 35, num2: 4, op: "×" },
+            { id: 18, text: "22 × 7", answer: 154, num1: 22, num2: 7, op: "×" },
+            { id: 19, text: "40 × 5", answer: 200, num1: 40, num2: 5, op: "×" },
+            { id: 20, text: "18 × 12", answer: 216, num1: 18, num2: 12, op: "×" }
+        ],
+        pembagian: [
+            { id: 1, text: "56 ÷ 8", answer: 7, num1: 56, num2: 8, op: "÷" },
+            { id: 2, text: "72 ÷ 6", answer: 12, num1: 72, num2: 6, op: "÷" },
+            { id: 3, text: "81 ÷ 9", answer: 9, num1: 81, num2: 9, op: "÷" },
+            { id: 4, text: "64 ÷ 4", answer: 16, num1: 64, num2: 4, op: "÷" },
+            { id: 5, text: "91 ÷ 7", answer: 13, num1: 91, num2: 7, op: "÷" },
+            { id: 6, text: "75 ÷ 3", answer: 25, num1: 75, num2: 3, op: "÷" },
+            { id: 7, text: "90 ÷ 5", answer: 18, num1: 90, num2: 5, op: "÷" },
+            { id: 8, text: "144 ÷ 12", answer: 12, num1: 144, num2: 12, op: "÷" },
+            { id: 9, text: "121 ÷ 11", answer: 11, num1: 121, num2: 11, op: "÷" },
+            { id: 10, text: "128 ÷ 8", answer: 16, num1: 128, num2: 8, op: "÷" },
+            { id: 11, text: "84 ÷ 4", answer: 21, num1: 84, num2: 4, op: "÷" },
+            { id: 12, text: "153 ÷ 9", answer: 17, num1: 153, num2: 9, op: "÷" },
+            { id: 13, text: "114 ÷ 6", answer: 19, num1: 114, num2: 6, op: "÷" },
+            { id: 14, text: "120 ÷ 5", answer: 24, num1: 120, num2: 5, op: "÷" },
+            { id: 15, text: "64 ÷ 2", answer: 32, num1: 64, num2: 2, op: "÷" },
+            { id: 16, text: "81 ÷ 3", answer: 27, num1: 81, num2: 3, op: "÷" },
+            { id: 17, text: "140 ÷ 4", answer: 35, num1: 140, num2: 4, op: "÷" },
+            { id: 18, text: "154 ÷ 7", answer: 22, num1: 154, num2: 7, op: "÷" },
+            { id: 19, text: "200 ÷ 5", answer: 40, num1: 200, num2: 5, op: "÷" },
+            { id: 20, text: "216 ÷ 12", answer: 18, num1: 216, num2: 12, op: "÷" }
+        ],
+        penambahan: [
+            { id: 1, text: "45 + 32", answer: 77, num1: 45, num2: 32, op: "+" },
+            { id: 2, text: "67 + 28", answer: 95, num1: 67, num2: 28, op: "+" },
+            { id: 3, text: "89 + 14", answer: 103, num1: 89, num2: 14, op: "+" },
+            { id: 4, text: "120 + 35", answer: 155, num1: 120, num2: 35, op: "+" },
+            { id: 5, text: "56 + 78", answer: 134, num1: 56, num2: 78, op: "+" },
+            { id: 6, text: "91 + 19", answer: 110, num1: 91, num2: 19, op: "+" },
+            { id: 7, text: "150 + 75", answer: 225, num1: 150, num2: 75, op: "+" },
+            { id: 8, text: "43 + 57", answer: 100, num1: 43, num2: 57, op: "+" },
+            { id: 9, text: "88 + 12", answer: 100, num1: 88, num2: 12, op: "+" },
+            { id: 10, text: "134 + 66", answer: 200, num1: 134, num2: 66, op: "+" },
+            { id: 11, text: "29 + 71", answer: 100, num1: 29, num2: 71, op: "+" },
+            { id: 12, text: "250 + 125", answer: 375, num1: 250, num2: 125, op: "+" },
+            { id: 13, text: "73 + 48", answer: 121, num1: 73, num2: 48, op: "+" },
+            { id: 14, text: "99 + 101", answer: 200, num1: 99, num2: 101, op: "+" },
+            { id: 15, text: "145 + 55", answer: 200, num1: 145, num2: 55, op: "+" },
+            { id: 16, text: "36 + 64", answer: 100, num1: 36, num2: 64, op: "+" },
+            { id: 17, text: "210 + 90", answer: 300, num1: 210, num2: 90, op: "+" },
+            { id: 18, text: "87 + 33", answer: 120, num1: 87, num2: 33, op: "+" },
+            { id: 19, text: "158 + 42", answer: 200, num1: 158, num2: 42, op: "+" },
+            { id: 20, text: "300 + 150", answer: 450, num1: 300, num2: 150, op: "+" }
+        ],
+        pengurangan: [
+            { id: 1, text: "95 − 42", answer: 53, num1: 95, num2: 42, op: "−" },
+            { id: 2, text: "120 − 35", answer: 85, num1: 120, num2: 35, op: "−" },
+            { id: 3, text: "88 − 19", answer: 69, num1: 88, num2: 19, op: "−" },
+            { id: 4, text: "150 − 75", answer: 75, num1: 150, num2: 75, op: "−" },
+            { id: 5, text: "200 − 48", answer: 152, num1: 200, num2: 48, op: "−" },
+            { id: 6, text: "91 − 27", answer: 64, num1: 91, num2: 27, op: "−" },
+            { id: 7, text: "134 − 66", answer: 68, num1: 134, num2: 66, op: "−" },
+            { id: 8, text: "100 − 45", answer: 55, num1: 100, num2: 45, op: "−" },
+            { id: 9, text: "78 − 29", answer: 49, num1: 78, num2: 29, op: "−" },
+            { id: 10, text: "165 − 85", answer: 80, num1: 165, num2: 85, op: "−" },
+            { id: 11, text: "250 − 125", answer: 125, num1: 250, num2: 125, op: "−" },
+            { id: 12, text: "99 − 33", answer: 66, num1: 99, num2: 33, op: "−" },
+            { id: 13, text: "180 − 72", answer: 108, num1: 180, num2: 72, op: "−" },
+            { id: 14, text: "145 − 55", answer: 90, num1: 145, num2: 55, op: "−" },
+            { id: 15, text: "300 − 150", answer: 150, num1: 300, num2: 150, op: "−" },
+            { id: 16, text: "87 − 49", answer: 38, num1: 87, num2: 49, op: "−" },
+            { id: 17, text: "210 − 90", answer: 120, num1: 210, num2: 90, op: "−" },
+            { id: 18, text: "158 − 42", answer: 116, num1: 158, num2: 42, op: "−" },
+            { id: 19, text: "400 − 175", answer: 225, num1: 400, num2: 175, op: "−" },
+            { id: 20, text: "500 − 250", answer: 250, num1: 500, num2: 250, op: "−" }
+        ]
+    };
+
+    // Self-contained sound engine using HTML5 Web Audio API
+    const playSound = (isCorrect) => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (isCorrect) {
+                // Happy cheerful chime
+                const now = ctx.currentTime;
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    
+                    gain.gain.setValueAtTime(0.12, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.18);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.2);
+                });
+            } else {
+                // Sad crying slide down
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(80, now + 0.5);
+                
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+        } catch (e) {
+            console.warn("Audio Context blocked or not supported yet:", e);
+        }
+    };
+
+    const generateChoices = (correctAnswer, category) => {
+        const choices = new Set([correctAnswer]);
+        
+        while (choices.size < 4) {
+            let offset;
+            const seed = Math.random();
+            if (seed < 0.3) {
+                offset = Math.floor(Math.random() * 5) + 1;
+            } else if (seed < 0.6) {
+                offset = -(Math.floor(Math.random() * 5) + 1);
+            } else if (seed < 0.8) {
+                offset = 10;
+            } else {
+                offset = -10;
+            }
+            
+            const candidate = correctAnswer + offset;
+            if (candidate > 0 && candidate !== correctAnswer) {
+                choices.add(candidate);
+            }
+        }
+        
+        // Shuffle choices array
+        return Array.from(choices).sort(() => Math.random() - 0.5);
+    };
+
+    // Expression values: 'idle' | 'happy' (terseyum) | 'sad' (menangis)
+    const CrocodileLogo = ({ mood = 'idle', className = "w-48 h-48" }) => {
+        return (
+            <div className={`relative flex items-center justify-center ${className}`}>
+                <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-lg">
+                    {/* Definitions for glowing effects */}
+                    <defs>
+                        <radialGradient id="mathBallGlow" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stopColor="#38bdf8" stopOpacity="1" />
+                            <stop offset="70%" stopColor="#0284c7" stopOpacity="0.8" />
+                            <stop offset="100%" stopColor="#0369a1" stopOpacity="0" />
+                        </radialGradient>
+                    </defs>
+
+                    {/* Math Sparkles Background (Only if happy) */}
+                    {mood === 'happy' && (
+                        <g className="animate-pulse">
+                            <path d="M 20 50 L 30 60 M 25 45 L 25 65" stroke="#facc15" strokeWidth="4" strokeLinecap="round" />
+                            <path d="M 170 40 L 180 50 M 175 35 L 175 55" stroke="#facc15" strokeWidth="4" strokeLinecap="round" />
+                            <path d="M 180 150 L 190 160 M 185 145 L 185 165" stroke="#67e8f9" strokeWidth="4" strokeLinecap="round" />
+                            <path d="M 30 160 L 40 170 M 35 155 L 35 175" stroke="#67e8f9" strokeWidth="4" strokeLinecap="round" />
+                        </g>
+                    )}
+
+                    {/* Crocodile Tail */}
+                    <path d="M 40 140 Q 15 110 10 130 T 40 160 Z" fill="#16a34a" />
+                    {/* Tail Spikes */}
+                    <polygon points="12,120 18,125 10,132" fill="#15803d" />
+                    <polygon points="20,135 27,138 22,146" fill="#15803d" />
+
+                    {/* Body */}
+                    <ellipse cx="100" cy="140" rx="45" ry="35" fill="#16a34a" />
+                    {/* Yellow soft tummy */}
+                    <ellipse cx="100" cy="145" rx="30" ry="24" fill="#fef08a" />
+
+                    {/* Crocodile Back Spikes */}
+                    <polygon points="90,95 100,82 110,95" fill="#15803d" />
+                    <polygon points="70,110 80,98 90,110" fill="#15803d" />
+                    <polygon points="110,110 120,98 130,110" fill="#15803d" />
+
+                    {/* Head */}
+                    <path d="M 60 110 C 60 70, 140 70, 140 110 C 140 120, 60 120, 60 110 Z" fill="#16a34a" />
+
+                    {/* Snout */}
+                    <path d="M 75 105 Q 100 90 125 105 Q 125 125 100 125 Q 75 125 75 105 Z" fill="#15803d" />
+                    {/* Nostrils */}
+                    <circle cx="93" cy="100" r="3" fill="#14532d" />
+                    <circle cx="107" cy="100" r="3" fill="#14532d" />
+
+                    {/* Eyes Background (Big cute rounded whites) */}
+                    <circle cx="85" cy="80" r="16" fill="white" stroke="#15803d" strokeWidth="2" />
+                    <circle cx="115" cy="80" r="16" fill="white" stroke="#15803d" strokeWidth="2" />
+
+                    {/* Dynamic Eyes based on mood */}
+                    {mood === 'idle' && (
+                        <g>
+                            {/* Normal Looking Pupils */}
+                            <circle cx="85" cy="80" r="8" fill="#1e293b" />
+                            <circle cx="115" cy="80" r="8" fill="#1e293b" />
+                            {/* Sparkle details */}
+                            <circle cx="82" cy="76" r="3" fill="white" />
+                            <circle cx="112" cy="76" r="3" fill="white" />
+                        </g>
+                    )}
+
+                    {mood === 'happy' && (
+                        <g>
+                            {/* Laughing arched eyes ^ ^ */}
+                            <path d="M 73 83 Q 85 68 97 83" fill="none" stroke="#1e293b" strokeWidth="4.5" strokeLinecap="round" />
+                            <path d="M 103 83 Q 115 68 127 83" fill="none" stroke="#1e293b" strokeWidth="4.5" strokeLinecap="round" />
+                        </g>
+                    )}
+
+                    {mood === 'sad' && (
+                        <g>
+                            {/* Sad weeping downward curved eyes */}
+                            <path d="M 73 75 Q 85 87 97 75" fill="none" stroke="#1e293b" strokeWidth="4" strokeLinecap="round" />
+                            <path d="M 103 75 Q 115 87 127 75" fill="none" stroke="#1e293b" strokeWidth="4" strokeLinecap="round" />
+                            {/* Left Teardrop */}
+                            <path d="M 85 85 Q 85 100 80 100 Q 75 100 80 88 Z" fill="#38bdf8" className="animate-tear" />
+                            {/* Right Teardrop */}
+                            <path d="M 115 85 Q 115 100 120 100 Q 125 100 120 88 Z" fill="#38bdf8" className="animate-tear" style={{ animationDelay: '0.6s' }} />
+                        </g>
+                    )}
+
+                    {/* Dynamic Mouth and Teeth based on mood */}
+                    {mood === 'idle' && (
+                        <g>
+                            {/* Normal friendly line */}
+                            <path d="M 80 114 Q 100 120 120 114" fill="none" stroke="#111827" strokeWidth="3" strokeLinecap="round" />
+                        </g>
+                    )}
+
+                    {mood === 'happy' && (
+                        <g>
+                            {/* Huge wide grin showing cute teeth */}
+                            <path d="M 78 110 Q 100 135 122 110 Z" fill="#991b1b" />
+                            <path d="M 78 110 Q 100 135 122 110" fill="none" stroke="#111827" strokeWidth="3" />
+                            {/* Cute tongue */}
+                            <path d="M 90 125 Q 100 115 110 125 Q 100 132 90 125 Z" fill="#f43f5e" />
+                            {/* Little sharp teeth */}
+                            <polygon points="85,110 90,116 95,110" fill="white" />
+                            <polygon points="105,110 110,116 115,110" fill="white" />
+                        </g>
+                    )}
+
+                    {mood === 'sad' && (
+                        <g>
+                            {/* Sad wavy/wailing mouth */}
+                            <path d="M 82 120 Q 100 110 118 120" fill="none" stroke="#111827" strokeWidth="3.5" strokeLinecap="round" />
+                        </g>
+                    )}
+
+                    {/* Arms holding the Magical "Bola Matematik" */}
+                    {/* Left arm */}
+                    <path d="M 65 140 C 45 140 45 155 60 155" fill="none" stroke="#16a34a" strokeWidth="12" strokeLinecap="round" />
+                    
+                    {/* Right arm reaching out to hold the glowing ball */}
+                    <path d="M 135 140 Q 155 140 162 145" fill="none" stroke="#16a34a" strokeWidth="12" strokeLinecap="round" />
+
+                    {/* The glowing "Bola Matematik" resting on his hand/claw */}
+                    <g className="animate-glow" style={{ transformOrigin: '165px 145px' }}>
+                        {/* Glow halo */}
+                        <circle cx="165" cy="145" r="28" fill="url(#mathBallGlow)" />
+                        {/* Solid bright glass sphere */}
+                        <circle cx="165" cy="145" r="18" fill="#0ea5e9" opacity="0.85" stroke="#e0f2fe" strokeWidth="2.5" />
+                        {/* Specular highlight */}
+                        <circle cx="160" cy="140" r="5" fill="white" opacity="0.6" />
+                        {/* Tiny floating math symbols inside the ball */}
+                        <text x="160" y="149" fill="white" fontSize="12" fontWeight="bold" fontFamily="Fredoka One">+</text>
+                        <text x="166" y="143" fill="yellow" fontSize="9" fontWeight="bold" fontFamily="Fredoka One">×</text>
+                    </g>
+                </svg>
+            </div>
+        );
+    };
+
+    function App() {
+        // App Navigation Pages: 'cover' | 'lobby' | 'play' | 'score' | 'history'
+        const [currentPage, setCurrentPage] = useState('cover');
+        const [selectedCategory, setSelectedCategory] = useState('perkalian');
+        
+        // Gameplay states
+        const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+        const [score, setScore] = useState(0);
+        const [selectedAnswer, setSelectedAnswer] = useState(null);
+        const [isAnswered, setIsAnswered] = useState(false);
+        const [shuffledChoices, setShuffledChoices] = useState([]);
+        const [answersLog, setAnswersLog] = useState([]); // array of { questionText, userAnswer, correctAnswer, isCorrect }
+        
+        // 15 seconds per-question timer states
+        const [timeLeft, setTimeLeft] = useState(15);
+        
+        // Visual Croc Emotion feedback state: 'idle' | 'happy' | 'sad'
+        const [crocMood, setCrocMood] = useState('idle');
+        
+        // Dynamic confetti/stars particles
+        const [particles, setParticles] = useState([]);
+
+        // Saved Transactions ledger state
+        const [savedGames, setSavedGames] = useState([]);
+        const [showSaveSuccessToast, setShowSaveSuccessToast] = useState(false);
+
+        // Custom Confirmation Modal overlays (Strictly avoiding native alert/confirm popups)
+        const [showExitConfirm, setShowExitConfirm] = useState(false);
+        const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+        // Load saved games from localStorage if exists
+        useEffect(() => {
+            const savedData = localStorage.getItem('myki_math_cap_transactions');
+            if (savedData) {
+                try {
+                    setSavedGames(JSON.parse(savedData));
+                } catch(e) {
+                    console.error("Failed parsing localStorage saves:", e);
+                }
+            }
+        }, []);
+
+        // Countdown timer hook that triggers every question and stops when answered
+        useEffect(() => {
+            if (currentPage !== 'play' || isAnswered) return;
+
+            // Reset time back to 15 seconds on every new question
+            setTimeLeft(15);
+
+            const countdownInterval = setInterval(() => {
+                setTimeLeft((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(countdownInterval);
+                        handleTimeOut(); // Trigger automatic failure on time out
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+            // Cleanup subscription on unmount or question change
+            return () => clearInterval(countdownInterval);
+        }, [currentPage, currentQuestionIdx, isAnswered]);
+
+        const handleTimeOut = () => {
+            if (isAnswered) return;
+            
+            setIsAnswered(true);
+            setSelectedAnswer('Waktu Habis'); // Marker for timeout
+
+            const activeQuestions = GAME_QUESTIONS[selectedCategory];
+            const currentQuestion = activeQuestions[currentQuestionIdx];
+            const correctVal = currentQuestion.answer;
+
+            // Log time out as an incorrect entry
+            setAnswersLog(prev => [...prev, {
+                questionText: currentQuestion.text,
+                userAnswer: 'Waktu Habis ⏱️',
+                correctAnswer: correctVal,
+                isCorrect: false
+            }]);
+
+            setCrocMood('sad');
+            playSound(false);
+        };
+
+        const triggerCorrectSparkles = () => {
+            const newParticles = [];
+            for (let i = 0; i < 25; i++) {
+                newParticles.push({
+                    id: Math.random(),
+                    x: Math.random() * 100, // percentage left
+                    y: Math.random() * 60 + 20, // percentage top
+                    size: Math.random() * 16 + 8,
+                    color: ['#facc15', '#4ade80', '#60a5fa', '#f472b6', '#fb7185'][Math.floor(Math.random() * 5)],
+                    delay: Math.random() * 0.4
+                });
+            }
+            setParticles(newParticles);
+            setTimeout(() => setParticles([]), 2500);
+        };
+
+        const handleAnswerSelection = (answer) => {
+            if (isAnswered) return;
+            
+            setSelectedAnswer(answer);
+            setIsAnswered(true);
+
+            const activeQuestions = GAME_QUESTIONS[selectedCategory];
+            const currentQuestion = activeQuestions[currentQuestionIdx];
+            const correctVal = currentQuestion.answer;
+            const correct = (answer === correctVal);
+
+            // Log this specific answer detail
+            setAnswersLog(prev => [...prev, {
+                questionText: currentQuestion.text,
+                userAnswer: answer,
+                correctAnswer: correctVal,
+                isCorrect: correct
+            }]);
+
+            if (correct) {
+                setScore(prev => prev + 1);
+                setCrocMood('happy');
+                playSound(true);
+                triggerCorrectSparkles();
+            } else {
+                setCrocMood('sad');
+                playSound(false);
+            }
+        };
+
+        // Advance to next question or finish game
+        const handleNext = () => {
+            const activeQuestions = GAME_QUESTIONS[selectedCategory];
+            if (currentQuestionIdx < activeQuestions.length - 1) {
+                setCurrentQuestionIdx(prev => prev + 1);
+                setSelectedAnswer(null);
+                setIsAnswered(false);
+                setCrocMood('idle');
+            } else {
+                // Game finished!
+                setCurrentPage('score');
+            }
+        };
+
+        // Trigger generation of choice options whenever a new question loads
+        useEffect(() => {
+            if (currentPage === 'play') {
+                const activeQuestions = GAME_QUESTIONS[selectedCategory];
+                if (activeQuestions && activeQuestions[currentQuestionIdx]) {
+                    const correctVal = activeQuestions[currentQuestionIdx].answer;
+                    const choices = generateChoices(correctVal, selectedCategory);
+                    setShuffledChoices(choices);
+                }
+            }
+        }, [currentPage, selectedCategory, currentQuestionIdx]);
+
+        // Start a fresh game session
+        const startNewGame = (category) => {
+            setSelectedCategory(category);
+            setCurrentQuestionIdx(0);
+            setScore(0);
+            setSelectedAnswer(null);
+            setIsAnswered(false);
+            setAnswersLog([]);
+            setCrocMood('idle');
+            setCurrentPage('play');
+        };
+
+        const saveGameTransaction = () => {
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            const formattedTime = today.toLocaleTimeString('id-ID', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // Map standard keys to beautiful Indonesian strings
+            const catLabel = {
+                perkalian: 'Perkalian',
+                pembagian: 'Pembagian',
+                penambahan: 'Penambahan',
+                pengurangan: 'Pengurangan'
+            }[selectedCategory];
+
+            const newTransaction = {
+                id: 'TX-' + Date.now(),
+                date: formattedDate,
+                time: formattedTime,
+                category: catLabel,
+                score: score,
+                total: GAME_QUESTIONS[selectedCategory].length,
+                percent: Math.round((score / GAME_QUESTIONS[selectedCategory].length) * 100)
+            };
+
+            const updatedList = [newTransaction, ...savedGames];
+            setSavedGames(updatedList);
+            localStorage.setItem('myki_math_cap_transactions', JSON.stringify(updatedList));
+            
+            // Highlight a beautiful modal toast confirmation
+            setShowSaveSuccessToast(true);
+            setTimeout(() => {
+                setShowSaveSuccessToast(false);
+            }, 3000);
+        };
+
+        // Clear all local records
+        const clearHistory = () => {
+            setSavedGames([]);
+            localStorage.removeItem('myki_math_cap_transactions');
+        };
+
+        // Calculate dynamic overall success percentages for each category
+        const getCategoryStats = (categoryNameEn) => {
+            const indonesianLabel = {
+                perkalian: 'Perkalian',
+                pembagian: 'Pembagian',
+                penambahan: 'Penambahan',
+                pengurangan: 'Pengurangan'
+            }[categoryNameEn];
+
+            const filtered = savedGames.filter(g => g.category === indonesianLabel);
+            if (filtered.length === 0) {
+                return { averagePercent: 0, count: 0 };
+            }
+
+            const totalSum = filtered.reduce((acc, curr) => acc + curr.percent, 0);
+            const avg = Math.round(totalSum / filtered.length);
+            return { averagePercent: avg, count: filtered.length };
+        };
+
+        return (
+            <div className="flex flex-col min-h-[580px] w-full justify-between relative p-6">
+                
+                {/* Floating Confetti Elements */}
+                {particles.map(p => (
+                    <div 
+                        key={p.id}
+                        className="absolute pointer-events-none rounded-full flex items-center justify-center font-bold text-white shadow-md transition-all duration-1000 ease-out animate-bounce"
+                        style={{
+                            left: `${p.x}%`,
+                            top: `${p.y}%`,
+                            width: `${p.size}px`,
+                            height: `${p.size}px`,
+                            backgroundColor: p.color,
+                            animationDelay: `${p.delay}s`,
+                            zIndex: 40,
+                            transform: 'translateY(-20px)'
+                        }}
+                    >
+                        ★
+                    </div>
+                ))}
+
+                {/* Save Success Toast alert */}
+                {showSaveSuccessToast && (
+                    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white font-bold py-3 px-6 rounded-full shadow-2xl flex items-center space-x-3 z-50 animate-bounce">
+                        <i className="fas fa-check-circle text-xl"></i>
+                        <span>Transaksi Permainan Berhasil Disimpan!</span>
+                    </div>
+                )}
+
+                {/* Custom Modal Confirmation for exiting the game */}
+                {showExitConfirm && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-all">
+                        <div className="bg-white rounded-3xl p-6 max-w-sm w-full border-4 border-amber-400 text-center shadow-2xl animate-scaleIn">
+                            <i className="fas fa-exclamation-triangle text-amber-500 text-5xl mb-3 animate-bounce"></i>
+                            <h3 className="text-2xl font-black text-slate-800 mb-2 title-font">Konfirmasi Keluar</h3>
+                            <p className="text-gray-600 text-sm mb-6">Apakah kamu yakin ingin keluar ke lobi utama? Hasil pengerjaan saat ini tidak akan tersimpan.</p>
+                            <div className="flex space-x-3">
+                                <button 
+                                    onClick={() => {
+                                        setShowExitConfirm(false);
+                                        setCurrentPage('lobby');
+                                        setCrocMood('idle');
+                                    }}
+                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-extrabold py-3 rounded-2xl shadow-md transition"
+                                >
+                                    Ya, Keluar
+                                </button>
+                                <button 
+                                    onClick={() => setShowExitConfirm(false)}
+                                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-slate-700 font-extrabold py-3 rounded-2xl transition"
+                                >
+                                    Batal
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Custom Modal Confirmation for clearing all history records */}
+                {showClearConfirm && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-all">
+                        <div className="bg-white rounded-3xl p-6 max-w-sm w-full border-4 border-red-500 text-center shadow-2xl animate-scaleIn">
+                            <i className="fas fa-trash-alt text-red-500 text-5xl mb-3 animate-pulse"></i>
+                            <h3 className="text-2xl font-black text-slate-800 mb-2 title-font">Hapus Semua</h3>
+                            <p className="text-gray-600 text-sm mb-6">Apakah Anda benar-benar yakin ingin menghapus seluruh riwayat transaksi permainan Anda secara permanen?</p>
+                            <div className="flex space-x-3">
+                                <button 
+                                    onClick={() => {
+                                        setShowClearConfirm(false);
+                                        clearHistory();
+                                    }}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-extrabold py-3 rounded-2xl shadow-md transition"
+                                >
+                                    Ya, Hapus
+                                </button>
+                                <button 
+                                    onClick={() => setShowClearConfirm(false)}
+                                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-slate-700 font-extrabold py-3 rounded-2xl transition"
+                                >
+                                    Batal
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* COVER PAGE (Front Cover) */}
+                {currentPage === 'cover' && (
+                    <div className="flex flex-col items-center justify-center flex-grow py-8 text-center animate-fadeIn">
+                        <div className="mb-4">
+                            <h1 className="text-4xl sm:text-5xl title-font text-green-600 tracking-wider drop-shadow-md">
+                                MyKi Math CAP
+                            </h1>
+                            <p className="text-green-700 font-semibold mt-1 tracking-wide uppercase text-xs sm:text-sm">
+                                Game Petualangan Matematika Interaktif
+                            </p>
+                        </div>
+
+                        {/* Interactive Crocodile Logo holding mathematical ball */}
+                        <div className="my-2 cursor-pointer transform hover:scale-105 transition-all duration-300" onClick={() => setCrocMood(prev => prev === 'happy' ? 'idle' : 'happy')}>
+                            <CrocodileLogo mood={crocMood} className="w-56 h-56 sm:w-64 sm:h-64" />
+                            <div className="mt-2 text-xs text-green-600 italic bg-green-100/70 py-1 px-3 rounded-full inline-block">
+                                <i className="fas fa-hand-pointer mr-1"></i> Klik buaya untuk membuatnya tersenyum!
+                            </div>
+                        </div>
+
+                        {/* Cover Start Button */}
+                        <div className="mt-8 w-full max-w-sm px-4">
+                            <button 
+                                onClick={() => {
+                                    setCrocMood('idle');
+                                    setCurrentPage('lobby');
+                                }}
+                                className="w-full bg-green-500 hover:bg-green-600 text-white font-extrabold text-2xl py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-b-4 border-green-700 tracking-wide title-font flex items-center justify-center space-x-3"
+                            >
+                                <i className="fas fa-play"></i>
+                                <span>MULAI</span>
+                            </button>
+                        </div>
+
+                        {/* Creator Credit strictly kept at the bottom right */}
+                        <div className="absolute bottom-4 right-6 text-right">
+                            <p className="text-xs text-gray-400 font-medium">Pembuat Aplikasi:</p>
+                            <p className="text-sm font-bold text-green-700 bg-green-100/60 px-3 py-1 rounded-lg border border-green-200">
+                                Mery Sauyai
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* LOBBY / CATEGORY SELECTION PAGE */}
+                {currentPage === 'lobby' && (
+                    <div className="flex flex-col flex-grow animate-fadeIn">
+                        <div className="flex items-center justify-between mb-6">
+                            <button 
+                                onClick={() => setCurrentPage('cover')}
+                                className="text-green-700 hover:text-green-900 font-bold flex items-center space-x-2 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-xl transition"
+                            >
+                                <i className="fas fa-arrow-left"></i>
+                                <span>Kembali</span>
+                            </button>
+                            <button 
+                                onClick={() => setCurrentPage('history')}
+                                className="bg-amber-100 text-amber-800 hover:bg-amber-200 font-bold px-4 py-1.5 rounded-xl transition flex items-center space-x-2 border border-amber-300 shadow-sm"
+                            >
+                                <i className="fas fa-history"></i>
+                                <span>Riwayat Nilai</span>
+                            </button>
+                        </div>
+
+                        <div className="text-center mb-6">
+                            <h2 className="text-2xl sm:text-3xl title-font text-green-800">
+                                Pilih Kategori Operasi
+                            </h2>
+                            <p className="text-gray-600 text-sm mt-1">
+                                Setiap pilihan memiliki 20 tantangan soal seru!
+                            </p>
+                        </div>
+
+                        {/* Category selection list */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-auto px-2">
+                            {/* PERKALIAN */}
+                            <button 
+                                onClick={() => setSelectedCategory('perkalian')}
+                                className={`p-4 rounded-2xl border-2 text-left transition-all duration-300 flex items-center justify-between shadow-sm hover:shadow-md ${
+                                    selectedCategory === 'perkalian' 
+                                    ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-400' 
+                                    : 'bg-white border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/30'
+                                }`}
+                            >
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-12 h-12 bg-emerald-500 text-white rounded-xl flex items-center justify-center text-2xl font-black">
+                                        ×
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-800">Perkalian</h3>
+                                        <p className="text-xs text-gray-500">Latihan perkalian dasar & menengah</p>
+                                    </div>
+                                </div>
+                                <div className="text-emerald-600 font-semibold text-sm">20 Soal</div>
+                            </button>
+
+                            {/* PEMBAGIAN */}
+                            <button 
+                                onClick={() => setSelectedCategory('pembagian')}
+                                className={`p-4 rounded-2xl border-2 text-left transition-all duration-300 flex items-center justify-between shadow-sm hover:shadow-md ${
+                                    selectedCategory === 'pembagian' 
+                                    ? 'bg-cyan-50 border-cyan-500 ring-2 ring-cyan-400' 
+                                    : 'bg-white border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/30'
+                                }`}
+                            >
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-12 h-12 bg-cyan-500 text-white rounded-xl flex items-center justify-center text-2xl font-black">
+                                        ÷
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-800">Pembagian</h3>
+                                        <p className="text-xs text-gray-500">Asah otak pembagian angka cepat</p>
+                                    </div>
+                                </div>
+                                <div className="text-cyan-600 font-semibold text-sm">20 Soal</div>
+                            </button>
+
+                            {/* PENAMBAHAN */}
+                            <button 
+                                onClick={() => setSelectedCategory('penambahan')}
+                                className={`p-4 rounded-2xl border-2 text-left transition-all duration-300 flex items-center justify-between shadow-sm hover:shadow-md ${
+                                    selectedCategory === 'penambahan' 
+                                    ? 'bg-indigo-50 border-indigo-500 ring-2 ring-indigo-400' 
+                                    : 'bg-white border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30'
+                                }`}
+                            >
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-12 h-12 bg-indigo-500 text-white rounded-xl flex items-center justify-center text-2xl font-black">
+                                        +
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-800">Penambahan</h3>
+                                        <p className="text-xs text-gray-500">Penjumlahan menyenangkan</p>
+                                    </div>
+                                </div>
+                                <div className="text-indigo-600 font-semibold text-sm">20 Soal</div>
+                            </button>
+
+                            {/* PENGURANGAN */}
+                            <button 
+                                onClick={() => setSelectedCategory('pengurangan')}
+                                className={`p-4 rounded-2xl border-2 text-left transition-all duration-300 flex items-center justify-between shadow-sm hover:shadow-md ${
+                                    selectedCategory === 'pengurangan' 
+                                    ? 'bg-rose-50 border-rose-500 ring-2 ring-rose-400' 
+                                    : 'bg-white border-gray-200 hover:border-rose-300 hover:bg-rose-50/30'
+                                }`}
+                            >
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-12 h-12 bg-rose-500 text-white rounded-xl flex items-center justify-center text-2xl font-black">
+                                        −
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-800">Pengurangan</h3>
+                                        <p className="text-xs text-gray-500">Tantangan kalkulasi pengurangan</p>
+                                    </div>
+                                </div>
+                                <div className="text-rose-600 font-semibold text-sm">20 Soal</div>
+                            </button>
+                        </div>
+
+                        {/* Launch Game Button */}
+                        <div className="mt-8 px-2">
+                            <button 
+                                onClick={() => startNewGame(selectedCategory)}
+                                className="w-full bg-green-500 hover:bg-green-600 text-white font-extrabold text-xl py-4 rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all border-b-4 border-green-700 uppercase tracking-wide flex items-center justify-center space-x-2"
+                            >
+                                <i className="fas fa-play-circle text-2xl"></i>
+                                <span>Mulai Bermain Sekarang!</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* GAMEPLAY WINDOW WITH 15S TIMER */}
+                {currentPage === 'play' && (() => {
+                    const activeQuestions = GAME_QUESTIONS[selectedCategory];
+                    const currentQuestion = activeQuestions[currentQuestionIdx];
+                    const progressPercent = ((currentQuestionIdx + 1) / activeQuestions.length) * 100;
+
+                    return (
+                        <div className="flex flex-col flex-grow animate-fadeIn">
+                            
+                            {/* Top HUD Stats */}
+                            <div className="flex items-center justify-between mb-4">
+                                <button 
+                                    onClick={() => setShowExitConfirm(true)}
+                                    className="text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-xl transition font-semibold text-sm flex items-center space-x-1"
+                                >
+                                    <i className="fas fa-sign-out-alt"></i>
+                                    <span>Keluar</span>
+                                </button>
+                                
+                                <div className="flex items-center space-x-3">
+                                    {/* Beautiful 15s Timer badge */}
+                                    <div className={`flex items-center space-x-1.5 px-3 py-1 rounded-xl font-extrabold border transition-all duration-300 ${
+                                        timeLeft <= 5 
+                                            ? 'bg-red-100 border-red-300 text-red-600 animate-pulse' 
+                                            : 'bg-green-100 border-green-300 text-green-700'
+                                    }`}>
+                                        <i className={`fas fa-stopwatch ${timeLeft <= 5 ? 'animate-spin' : ''}`}></i>
+                                        <span className="font-mono">{timeLeft}s</span>
+                                    </div>
+
+                                    <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 font-bold px-3 py-1 rounded-xl text-sm flex items-center space-x-1">
+                                        <i className="fas fa-star text-yellow-500"></i>
+                                        <span>Skor: {score}</span>
+                                    </div>
+                                    <div className="bg-green-100 border border-green-300 text-green-800 font-bold px-3 py-1 rounded-xl text-sm">
+                                        Soal: {currentQuestionIdx + 1}/{activeQuestions.length}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Question Completion Progress bar */}
+                            <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-2">
+                                <div 
+                                    className="bg-green-500 h-full transition-all duration-300 ease-out"
+                                    style={{ width: `${progressPercent}%` }}
+                                ></div>
+                            </div>
+
+                            {/* Question 15-second visual countdown line */}
+                            <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden mb-4">
+                                <div 
+                                    className={`h-full transition-all duration-1000 linear ${
+                                        timeLeft <= 5 ? 'bg-red-500 animate-pulse' : timeLeft <= 10 ? 'bg-amber-400' : 'bg-emerald-500'
+                                    }`}
+                                    style={{ width: `${(timeLeft / 15) * 100}%` }}
+                                ></div>
+                            </div>
+
+                            {/* Crocodile Animation Display Zone */}
+                            <div className="flex flex-col items-center justify-center my-2">
+                                <CrocodileLogo mood={crocMood} className="w-40 h-40 sm:w-48 sm:h-48" />
+                                
+                                {/* Live emotion text alerts */}
+                                <div className="h-6">
+                                    {isAnswered && (
+                                        selectedAnswer === 'Waktu Habis' ? (
+                                            <p className="text-red-500 font-bold text-sm animate-pulse flex items-center">
+                                                <i className="fas fa-hourglass-end mr-1.5"></i> Oh tidak! Waktu Habis! Buaya menangis sedih.
+                                            </p>
+                                        ) : selectedAnswer === currentQuestion.answer ? (
+                                            <p className="text-green-600 font-bold text-sm animate-bounce flex items-center">
+                                                <i className="fas fa-laugh-beam mr-1.5"></i> Buaya tersenyum senang! Benar sekali!
+                                            </p>
+                                        ) : (
+                                            <p className="text-red-500 font-bold text-sm animate-pulse flex items-center">
+                                                <i className="fas fa-sad-cry mr-1.5 flex items-center"></i> Buaya menangis sedih! Jawaban kurang tepat.
+                                            </p>
+                                        )
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Mathematics Question Banner inside standard bubble chalk block */}
+                            <div className="bg-slate-800 border-4 border-slate-700 text-white rounded-3xl p-6 text-center my-4 shadow-inner relative overflow-hidden">
+                                <div className="absolute top-2 left-2 text-slate-500 text-xs tracking-wider font-mono">MyKi MATH BLOCK</div>
+                                <div className="text-4xl sm:text-5xl font-extrabold tracking-wide title-font flex items-center justify-center space-x-3 py-2">
+                                    <span>{currentQuestion.text}</span>
+                                    <span className="text-emerald-400">=</span>
+                                    <span className="text-yellow-400">?</span>
+                                </div>
+                            </div>
+
+                            {/* Multiple Choice Options grid */}
+                            <div className="grid grid-cols-2 gap-4 mt-2">
+                                {shuffledChoices.map((choice, idx) => {
+                                    // Button colors based on selection state
+                                    let btnStyle = "bg-white border-gray-200 text-slate-800 hover:bg-green-50 hover:border-green-300";
+                                    
+                                    if (isAnswered) {
+                                        if (choice === currentQuestion.answer) {
+                                            // Correct option shows green
+                                            btnStyle = "bg-green-500 border-green-600 text-white scale-102 font-black shadow-lg";
+                                        } else if (choice === selectedAnswer) {
+                                            // Chosen wrong option shows red
+                                            btnStyle = "bg-red-500 border-red-600 text-white opacity-90 font-black shadow-md";
+                                        } else {
+                                            // Other untouched choices when shown answers
+                                            btnStyle = "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed";
+                                        }
+                                    }
+
+                                    return (
+                                        <button
+                                            key={idx}
+                                            onClick={() => handleAnswerSelection(choice)}
+                                            disabled={isAnswered}
+                                            className={`p-4 sm:p-5 rounded-2xl border-2 text-xl sm:text-2xl font-bold transition-all duration-200 flex items-center justify-center shadow-sm ${btnStyle}`}
+                                        >
+                                            {choice}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Lanjut / Next button */}
+                            <div className="mt-6 flex justify-end h-14">
+                                {isAnswered && (
+                                    <button
+                                        onClick={handleNext}
+                                        className="bg-green-600 hover:bg-green-700 text-white font-extrabold text-lg px-8 rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center space-x-2 animate-bounce border-b-4 border-green-800"
+                                    >
+                                        <span>Lanjut</span>
+                                        <i className="fas fa-arrow-right"></i>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })()}
+
+                {/* GAME SCORE SUMMARY WINDOW */}
+                {currentPage === 'score' && (() => {
+                    const activeQuestions = GAME_QUESTIONS[selectedCategory];
+                    const percent = Math.round((score / activeQuestions.length) * 100);
+                    
+                    // Award star evaluation based on score
+                    let stars = 0;
+                    if (percent >= 90) stars = 3;
+                    else if (percent >= 60) stars = 2;
+                    else if (percent >= 30) stars = 1;
+
+                    return (
+                        <div className="flex flex-col flex-grow items-center text-center animate-fadeIn">
+                            
+                            <h2 className="text-3xl sm:text-4xl title-font text-green-700 mb-2">
+                                Permainan Selesai!
+                            </h2>
+                            <p className="text-gray-600 font-medium mb-4">
+                                Kategori: <span className="font-bold text-gray-800 capitalize">{selectedCategory}</span>
+                            </p>
+
+                            {/* Interactive Star ratings */}
+                            <div className="flex space-x-2 mb-4">
+                                {[1, 2, 3].map(s => (
+                                    <i 
+                                        key={s} 
+                                        className={`fas fa-star text-4xl sm:text-5xl ${
+                                            s <= stars ? 'text-yellow-400 drop-shadow-md animate-jump' : 'text-gray-300'
+                                        }`}
+                                        style={{ animationDelay: `${s * 0.2}s` }}
+                                    ></i>
+                                ))}
+                            </div>
+
+                            {/* Interactive Crocodile Reaction to overall score */}
+                            <div className="my-2">
+                                <CrocodileLogo mood={percent >= 60 ? 'happy' : 'sad'} className="w-48 h-48" />
+                            </div>
+
+                            {/* Final calculations banner */}
+                            <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-4 w-full max-w-sm my-4 shadow-sm">
+                                <div className="text-sm text-gray-500 uppercase tracking-wider font-semibold">Hasil Pencapaian</div>
+                                <div className="text-5xl font-black text-green-600 title-font my-1">{score} / {activeQuestions.length}</div>
+                                <div className="text-sm text-gray-700 font-medium">
+                                    Kamu menjawab benar sebesar <span className="font-bold text-green-700">{percent}%</span> soal!
+                                </div>
+                            </div>
+
+                            {/* Action Operations: Save Transaction & Navigation */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md mt-4">
+                                <button
+                                    onClick={saveGameTransaction}
+                                    className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold p-3.5 rounded-2xl shadow-md transition flex items-center justify-center space-x-2 border-b-4 border-amber-700"
+                                >
+                                    <i className="fas fa-save"></i>
+                                    <span>Simpan Hasil Transaksi</span>
+                                </button>
+
+                                <button
+                                    onClick={() => startNewGame(selectedCategory)}
+                                    className="bg-green-500 hover:bg-green-600 text-white font-extrabold p-3.5 rounded-2xl shadow-md transition flex items-center justify-center space-x-2 border-b-4 border-green-700"
+                                >
+                                    <i className="fas fa-redo"></i>
+                                    <span>Main Lagi</span>
+                                </button>
+                                
+                                <button
+                                    onClick={() => setCurrentPage('lobby')}
+                                    className="bg-sky-500 hover:bg-sky-600 text-white font-extrabold p-3.5 rounded-2xl shadow-md transition flex items-center justify-center space-x-2 border-b-4 border-sky-700 sm:col-span-2"
+                                >
+                                    <i className="fas fa-home"></i>
+                                    <span>Kembali ke Lobi Utama</span>
+                                </button>
+                            </div>
+
+                            {/* Answer review ledger */}
+                            <div className="w-full mt-6 bg-slate-50 rounded-2xl border border-slate-200 p-4 text-left max-h-48 overflow-y-auto">
+                                <h4 className="font-bold text-slate-700 text-sm mb-2 flex items-center">
+                                    <i className="fas fa-list-check mr-1.5 text-blue-500"></i> Review Jawaban Kamu:
+                                </h4>
+                                <div className="space-y-1 text-xs">
+                                    {answersLog.map((log, i) => (
+                                        <div key={i} className="flex justify-between border-b border-slate-100 py-1">
+                                            <span className="font-semibold text-slate-600">{i+1}. {log.questionText}</span>
+                                            <span className="flex items-center space-x-1">
+                                                <span className="text-gray-500">Jawab: {log.userAnswer}</span>
+                                                {log.isCorrect ? (
+                                                    <i className="fas fa-check-circle text-green-500 ml-1"></i>
+                                                ) : (
+                                                    <span className="flex items-center">
+                                                        <i className="fas fa-times-circle text-red-500 ml-1"></i>
+                                                        <span className="text-[10px] text-green-600 ml-1 font-bold">({log.correctAnswer})</span>
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()}
+
+                {/* SAVED GAME TRANSACTION LEDGER PAGE WITH ANALYTICAL CATEGORY SUMMARY */}
+                {currentPage === 'history' && (() => {
+                    // Extract analytical performance for each category
+                    const statsPerkalian = getCategoryStats('perkalian');
+                    const statsPembagian = getCategoryStats('pembagian');
+                    const statsPenambahan = getCategoryStats('penambahan');
+                    const statsPengurangan = getCategoryStats('pengurangan');
+
+                    return (
+                        <div className="flex flex-col flex-grow animate-fadeIn">
+                            <div className="flex items-center justify-between mb-4">
+                                <button 
+                                    onClick={() => setCurrentPage('lobby')}
+                                    className="text-green-700 hover:text-green-900 font-bold flex items-center space-x-2 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-xl transition"
+                                >
+                                    <i className="fas fa-arrow-left"></i>
+                                    <span>Kembali ke Lobi</span>
+                                </button>
+                                
+                                {savedGames.length > 0 && (
+                                    <button 
+                                        onClick={() => setShowClearConfirm(true)}
+                                        className="text-red-600 hover:text-red-800 font-semibold text-sm flex items-center space-x-1.5 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition border border-red-200"
+                                    >
+                                        <i className="fas fa-trash-alt"></i>
+                                        <span>Hapus Semua</span>
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="mb-4 text-center sm:text-left">
+                                <h2 className="text-2xl sm:text-3xl title-font text-slate-800 flex items-center justify-center sm:justify-start space-x-2">
+                                    <i className="fas fa-receipt text-amber-500"></i>
+                                    <span>Transaksi Riwayat Nilai</span>
+                                </h2>
+                                <p className="text-gray-600 text-sm mt-1">
+                                    Berikut data transaksi nilai pengerjaan dan statistik persentase keberhasilan per kategori.
+                                </p>
+                            </div>
+
+                            {/* NEW DETAILED TRANSACTION SUMMARY - PERCENTAGE MASTER CARD */}
+                            <div className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl p-4 text-white shadow-md mb-6">
+                                <h3 className="text-sm font-extrabold uppercase tracking-widest text-emerald-100 mb-3 flex items-center">
+                                    <i className="fas fa-chart-line mr-2"></i> Rata-rata Persentase Kategori
+                                </h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {/* Perkalian Stats */}
+                                    <div className="bg-white/10 rounded-xl p-2.5 border border-white/10 flex flex-col justify-between">
+                                        <span className="text-xs font-bold text-emerald-100">Perkalian</span>
+                                        <div className="flex items-baseline space-x-1 mt-1">
+                                            <span className="text-2xl font-black">{statsPerkalian.count > 0 ? `${statsPerkalian.averagePercent}%` : '-'}</span>
+                                            <span className="text-[10px] text-emerald-100 font-medium">({statsPerkalian.count}x main)</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Pembagian Stats */}
+                                    <div className="bg-white/10 rounded-xl p-2.5 border border-white/10 flex flex-col justify-between">
+                                        <span className="text-xs font-bold text-emerald-100">Pembagian</span>
+                                        <div className="flex items-baseline space-x-1 mt-1">
+                                            <span className="text-2xl font-black">{statsPembagian.count > 0 ? `${statsPembagian.averagePercent}%` : '-'}</span>
+                                            <span className="text-[10px] text-emerald-100 font-medium">({statsPembagian.count}x main)</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Penambahan Stats */}
+                                    <div className="bg-white/10 rounded-xl p-2.5 border border-white/10 flex flex-col justify-between">
+                                        <span className="text-xs font-bold text-emerald-100">Penambahan</span>
+                                        <div className="flex items-baseline space-x-1 mt-1">
+                                            <span className="text-2xl font-black">{statsPenambahan.count > 0 ? `${statsPenambahan.averagePercent}%` : '-'}</span>
+                                            <span className="text-[10px] text-emerald-100 font-medium">({statsPenambahan.count}x main)</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Pengurangan Stats */}
+                                    <div className="bg-white/10 rounded-xl p-2.5 border border-white/10 flex flex-col justify-between">
+                                        <span className="text-xs font-bold text-emerald-100">Pengurangan</span>
+                                        <div className="flex items-baseline space-x-1 mt-1">
+                                            <span className="text-2xl font-black">{statsPengurangan.count > 0 ? `${statsPengurangan.averagePercent}%` : '-'}</span>
+                                            <span className="text-[10px] text-emerald-100 font-medium">({statsPengurangan.count}x main)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* History table log list */}
+                            <div className="flex-grow overflow-y-auto max-h-[220px] border border-gray-200 rounded-2xl shadow-inner bg-slate-50 p-2">
+                                {savedGames.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-center text-gray-400">
+                                        <i className="fas fa-folder-open text-4xl mb-3 text-gray-300 animate-bounce"></i>
+                                        <p className="font-semibold text-sm">Belum Ada Transaksi Tersimpan</p>
+                                        <p className="text-xs px-6 mt-1">Selesaikan kuis di salah satu kategori lalu klik "Simpan Hasil Transaksi" untuk mendata tanggal nilai.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {savedGames.map((tx) => (
+                                            <div key={tx.id} className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                <div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <span className="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded-full capitalize">
+                                                            {tx.category}
+                                                        </span>
+                                                        <span className="text-[10px] text-gray-400 font-semibold">{tx.id}</span>
+                                                    </div>
+                                                    <div className="text-gray-700 font-bold text-sm mt-1.5 flex items-center">
+                                                        <i className="far fa-calendar-alt text-gray-400 mr-1.5"></i>
+                                                        <span>{tx.date}</span>
+                                                        <span className="mx-1.5 text-gray-300">|</span>
+                                                        <i className="far fa-clock text-gray-400 mr-1"></i>
+                                                        <span>{tx.time}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-100">
+                                                    <div className="text-right">
+                                                        <div className="text-xs text-gray-400 font-semibold">Skor Akhir</div>
+                                                        <div className="text-lg font-bold text-slate-800">{tx.score} / {tx.total}</div>
+                                                    </div>
+                                                    <div className={`w-14 h-14 rounded-full flex flex-col items-center justify-center border-2 ${
+                                                        tx.percent >= 75 
+                                                        ? 'bg-green-50 border-green-500 text-green-700' 
+                                                        : tx.percent >= 50 
+                                                        ? 'bg-yellow-50 border-yellow-500 text-yellow-700' 
+                                                        : 'bg-red-50 border-red-500 text-red-700'
+                                                    }`}>
+                                                        <span className="text-sm font-black leading-none">{tx.percent}</span>
+                                                        <span className="text-[8px] font-bold">%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Export or backup advice */}
+                            <div className="mt-4 bg-amber-50 rounded-xl p-3 border border-amber-100 text-xs text-amber-800 flex items-start space-x-2">
+                                <i className="fas fa-info-circle text-sm mt-0.5 text-amber-500"></i>
+                                <p>
+                                    Riwayat transaksi otomatis direkam pada perangkat ini. Rata-rata persentase di atas mencerminkan penguasaan siswa pada setiap operasi hitung matematika.
+                                </p>
+                            </div>
+                        </div>
+                    );
+                })()}
+
+                {/* Decorative Bottom Corner Watermark Footer */}
+                <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400 font-medium">
+                    <span>© 2026 MyKi Math CAP</span>
+                    <span>Didesain oleh Mery Sauyai</span>
+                </div>
+            </div>
+        );
+    }
+
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+</script>
+
+</body>
+</html>
